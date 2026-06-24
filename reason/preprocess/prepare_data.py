@@ -7,10 +7,16 @@ from tqdm import tqdm
 from datasets import load_dataset
 from .prepare_prompts import unique_preserve_order
 
+DATA_PATH = "~/Documents/data"
 
 def get_subgraphs(dataset_name, split):
-    input_file = os.path.join("rmanluo", f"RoG-{dataset_name}")
-    return load_dataset(input_file, split=split)
+    if DATA_PATH is None:
+        input_file = os.path.join("rmanluo", f"RoG-{dataset_name}")
+        dataset = load_dataset(input_file, split=split)
+    else:
+        local_dir = os.path.join(DATA_PATH, f"RoG-{dataset_name}", "data")
+        dataset = load_dataset("parquet", data_dir=local_dir)[split]
+    return dataset
 
 
 def extract_reasoning_paths(text):

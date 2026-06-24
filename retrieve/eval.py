@@ -13,6 +13,7 @@ def main(args):
         metric_dict[f'shortest_path_triple_recall@{k}'] = []
         metric_dict[f'gpt_triple_recall@{k}'] = []
     
+    shortest_path_triples_len_list = []
     for sample_id in pred_dict:
         if len(pred_dict[sample_id]['scored_triples']) == 0:
             continue
@@ -35,6 +36,7 @@ def main(args):
                 metric_dict[f'shortest_path_triple_recall@{k}'].append(
                     len(shortest_path_triples & triples_k) / len(shortest_path_triples)
                 )
+            shortest_path_triples_len_list.append(len(shortest_path_triples))
         
         gpt_triples = set(gpt_triple_dict.get(sample_id, []))
         if len(gpt_triples) > 0:
@@ -44,8 +46,17 @@ def main(args):
                     len(gpt_triples & triples_k) / len(gpt_triples)
                 )
 
+    # draw histogram
+    # import matplotlib.pyplot as plt
+    # shortest_path_triples_len_list = [s if s < 100 else 100 for s in shortest_path_triples_len_list]
+    # plt.hist(shortest_path_triples_len_list, bins=20)
+    # plt.savefig(f'{args.dataset}_shortest_path_triples_len_hist.pdf', bbox_inches='tight')
+
+    for k in k_list:
+        print(len(metric_dict[f'gpt_triple_recall@{k}']))
     for metric, val in metric_dict.items():
         metric_dict[metric] = np.mean(val)
+    
     
     table_dict = {
         'K': k_list,

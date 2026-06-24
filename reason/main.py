@@ -1,6 +1,6 @@
 import os
 import json
-import wandb
+import swanlab
 import random
 import argparse
 from tqdm import tqdm
@@ -120,7 +120,7 @@ def main():
 
     pred_file_path = f"./results/KGQA/{dataset_name}/RoG/{split}/results_gen_rule_path_RoG-{dataset_name}_RoG_{split}_predictions_3_False_jsonl/predictions.jsonl"
     run_name = f"{model_name}-{prompt_mode}-{llm_mode}-{frequency_penalty}-thres_{thres}-{split}"
-    run = wandb.init(project=f"RAG-{dataset_name}", name=run_name, config=args)
+    run = swanlab.init(project=f"RAG-{dataset_name}", name=run_name, config=vars(args))
 
     if args.score_dict_path is None:
         if dataset_name == "webqsp":

@@ -8,8 +8,8 @@ from prompts import icl_user_prompt, icl_ass_prompt
 
 
 def llm_init(model_name, tensor_parallel_size=1, max_seq_len_to_capture=8192, max_tokens=4000, seed=0, temperature=0, frequency_penalty=0):
-    if "gpt" not in model_name:
-        client = LLM(model=model_name, tensor_parallel_size=tensor_parallel_size, max_seq_len_to_capture=max_seq_len_to_capture)
+    if "llama" in model_name.lower():
+        client = LLM(model=model_name, tensor_parallel_size=tensor_parallel_size, max_model_len=max_seq_len_to_capture, enforce_eager=True)
         sampling_params = SamplingParams(temperature=temperature, max_tokens=max_tokens,
                                          frequency_penalty=frequency_penalty)
         llm = partial(client.chat, sampling_params=sampling_params, use_tqdm=False)
@@ -22,7 +22,7 @@ def llm_init(model_name, tensor_parallel_size=1, max_seq_len_to_capture=8192, ma
 
 
 def get_outputs(outputs, model_name):
-    if "gpt" not in model_name:
+    if "llama" in model_name.lower():
         return outputs[0].outputs[0].text
     else:
         return outputs.choices[0].message.content
@@ -75,7 +75,7 @@ def llm_inf_with_retry(llm, each_qa, llm_mode, model_name, max_retries):
 
 
 def llm_inf_all(llm, each_qa, llm_mode, model_name, max_retries=5):
-    if 'gpt' in model_name:
+    if "llama" in model_name.lower():
         return llm_inf_with_retry(llm, each_qa, llm_mode, model_name, max_retries)
     else:
         return llm_inf(llm, each_qa, llm_mode, model_name)

@@ -4,7 +4,7 @@ import pandas as pd
 import time
 import torch
 import torch.nn.functional as F
-import wandb
+import swanlab
 
 from collections import defaultdict
 from torch.optim import Adam
@@ -95,7 +95,8 @@ def train_epoch(device, train_loader, model, optimizer):
 
 def main(args):
     # Modify the config file for advanced settings and extensions.
-    config_file = f'configs/retriever/{args.dataset}.yaml'
+    config_file = f'configs/retriever/{args.dataset}.yaml' if args.config_path is None else args.config_path
+    # config_file = f'configs/retriever/{args.dataset}.yaml'
     config = load_yaml(config_file)
     
     device = torch.device('cuda:0')
@@ -106,10 +107,11 @@ def main(args):
     config_df = pd.json_normalize(config, sep='/')
     exp_prefix = config['train']['save_prefix']
     exp_name = f'{exp_prefix}_{ts}'
-    wandb.init(
+    swanlab.init(
         project=f'{args.dataset}',
         name=exp_name,
-        config=config_df.to_dict(orient='records')[0]
+        config=config_df.to_dict(orient='records')[0],
+        mode="cloud"
     )
     os.makedirs(exp_name, exist_ok=True)
 
@@ -145,7 +147,7 @@ def main(args):
             val_log = {'val/epoch': epoch}
             for key, val in val_eval_dict.items():
                 val_log[f'val/{key}'] = val
-            wandb.log(val_log)
+            swanlab.log(val_log)
 
         train_log_dict = train_epoch(device, train_loader, model, optimizer)
         
@@ -153,9 +155,10 @@ def main(args):
             'num_patient_epochs': num_patient_epochs,
             'epoch': epoch
         })
-        wandb.log(train_log_dict)
+        swanlab.log(train_log_dict)
         if num_patient_epochs == config['train']['patience']:
             break
+    swanlab.finish()
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
@@ -163,6 +166,8 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-d', '--dataset', type=str, required=True, 
                         choices=['webqsp', 'cwq'], help='Dataset name')
+    parser.add_argument('--config_path', type=str, default=None, help='Path to the config file')
+    
     args = parser.parse_args()
     
     main(args)

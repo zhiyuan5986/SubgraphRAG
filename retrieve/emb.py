@@ -30,14 +30,41 @@ def main(args):
     
     torch.set_num_threads(config['env']['num_threads'])
 
-    if args.dataset == 'cwq':
-        input_file = os.path.join('rmanluo', 'RoG-cwq')
-    else:
-        input_file = os.path.join('ml1996', 'webqsp')
+    # if args.dataset == 'cwq':
+    #     input_file = os.path.join('rmanluo', 'RoG-cwq') if args.dataset_path is None else os.path.join(args.dataset_path, 'RoG-cwq')
+    # else:
+    #     input_file = os.path.join('ml1996', 'webqsp') if args.dataset_path is None else os.path.join(args.dataset_path, 'webqsp')
 
-    train_set = load_dataset(input_file, split='train')
-    val_set = load_dataset(input_file, split='validation')
-    test_set = load_dataset(input_file, split='test')
+    # train_set = load_dataset(input_file, split='train')
+    # val_set = load_dataset(input_file, split='validation')
+    # test_set = load_dataset(input_file, split='test')
+
+    if args.dataset_path is None:
+        if args.dataset == 'cwq':
+            input_file = os.path.join('rmanluo', 'RoG-cwq') if args.dataset_path is None else os.path.join(args.dataset_path, 'RoG-cwq')
+        else:
+            input_file = os.path.join('ml1996', 'webqsp') if args.dataset_path is None else os.path.join(args.dataset_path, 'webqsp')
+
+        train_set = load_dataset(input_file, split='train')
+        val_set = load_dataset(input_file, split='validation')
+        test_set = load_dataset(input_file, split='test')
+    else:
+        if args.dataset == 'cwq':
+            local_dir = os.path.join(args.dataset_path, 'RoG-cwq', 'data')
+        else:
+            local_dir = os.path.join(args.dataset_path, 'webqsp', 'data')
+
+        # data_files = {
+        #     "train": os.path.join(local_dir, "train*.parquet"),
+        #     "validation": os.path.join(local_dir, "validation*.parquet"),
+        #     "test": os.path.join(local_dir, "test*.parquet"),
+        # }
+
+        dataset = load_dataset("parquet", data_dir=local_dir)
+
+        train_set = dataset["train"]
+        val_set = dataset["validation"]
+        test_set = dataset["test"]
     
     entity_identifiers = []
     with open(config['entity_identifier_file'], 'r') as f:
@@ -70,7 +97,7 @@ def main(args):
     text_encoder_name = config['text_encoder']['name']
     if text_encoder_name == 'gte-large-en-v1.5':
         from src.model.text_encoders import GTELargeEN
-        text_encoder = GTELargeEN(device)
+        text_encoder = GTELargeEN(args.model_path, device)
     else:
         raise NotImplementedError(text_encoder_name)
     
@@ -87,6 +114,9 @@ if __name__ == '__main__':
     parser = ArgumentParser('Text Embedding Pre-Computation for Retrieval')
     parser.add_argument('-d', '--dataset', type=str, required=True, 
                         choices=['webqsp', 'cwq'], help='Dataset name')
+    parser.add_argument('--dataset-path', type=str, default=None, required=False, help='Path to the dataset files')
+    parser.add_argument('--model-path', type=str, default=None, required=False, help='Path to the model')
+    
     args = parser.parse_args()
     
     main(args)
