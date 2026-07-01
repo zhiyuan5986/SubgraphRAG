@@ -13,6 +13,8 @@ def main(args):
     
     cpt = torch.load(args.path, map_location='cpu')
     config = cpt['config']
+    if args.dataset is not None:
+        config['dataset']['name'] = args.dataset
     set_seed(config['env']['seed'])
     torch.set_num_threads(config['env']['num_threads'])
     
@@ -42,7 +44,8 @@ def main(args):
             pred_triple_logits = model(
                 h_id_tensor, r_id_tensor, t_id_tensor, q_emb, entity_embs,
                 num_non_text_entities, relation_embs, topic_entity_one_hot)
-            pred_triple_scores = torch.sigmoid(pred_triple_logits).reshape(-1)
+            # pred_triple_scores = torch.sigmoid(pred_triple_logits).reshape(-1)
+            pred_triple_scores = pred_triple_logits.reshape(-1)
             top_K_results = torch.topk(pred_triple_scores, 
                                        min(args.max_K, len(pred_triple_scores)))
             top_K_scores = top_K_results.values.cpu().tolist()
@@ -88,6 +91,9 @@ if __name__ == '__main__':
                         help='Path to a saved model checkpoint, e.g., webqsp_Nov08-01:14:47/cpt.pth')
     parser.add_argument('--max_K', type=int, default=500,
                         help='K in top-K triple retrieval')
+    parser.add_argument('--dataset', type=str, default=None,
+                        help='Dataset name, e.g., cwq or webqsp')
+    
     args = parser.parse_args()
     
     main(args)

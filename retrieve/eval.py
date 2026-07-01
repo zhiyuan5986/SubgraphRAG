@@ -168,6 +168,9 @@ def main(args):
                 for h, r, t, score in zip(h_list, r_list, t_list, score_list)
                 if float(score) > args.thres
             ]
+            threshold_triples = sorted(threshold_triples, key=lambda x: score_list[threshold_triples.index(x)], reverse=True)
+            if args.thres_k is not None:
+                threshold_triples = threshold_triples[:args.thres_k]
             threshold_triple_set = set(threshold_triples)
             threshold_entities = {
                 entity for h, _, t in threshold_triples for entity in (h, t)
@@ -258,7 +261,7 @@ def main(args):
         print(thres_df.to_string(index=False))
 
     if args.visualize:
-        visualize_triple_count_distribution(retrieved_triple_counts, args)
+        visualize_triple_count_distribution(thres_triple_counts, args)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -305,6 +308,8 @@ if __name__ == '__main__':
             'report recalls plus average selected triples.'
         ),
     )
+    parser.add_argument('--thres_k', type=int, default=None,
+                        help='Number of triples to keep for threshold-based evaluation.')
     args = parser.parse_args()
     
     main(args)

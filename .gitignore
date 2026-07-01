@@ -2,3 +2,7 @@
 wandb
 *.pth
 retrieve/data_files
+*.pdf
+*.csv
+*args.json
+visualize_scores/
