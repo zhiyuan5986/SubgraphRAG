@@ -16,7 +16,8 @@ import string
 import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
-from urllib import request, error
+
+import openai
 
 
 SELECT_SYS_PROMPT = """# Role
@@ -221,20 +222,14 @@ def chat_completion(
     max_tokens: int,
     timeout: int,
 ) -> Dict[str, Any]:
-    url = base_url.rstrip("/") + "/chat/completions"
-    payload = {
-        "model": model,
-        "messages": list(messages),
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-    }
-    data = json.dumps(payload).encode("utf-8")
-    headers = {"Content-Type": "application/json"}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
-    req = request.Request(url, data=data, headers=headers, method="POST")
-    with request.urlopen(req, timeout=timeout) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    client = openai.OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
+    response = client.chat.completions.create(
+        model=model,
+        messages=list(messages),
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+    return response.model_dump()
 
 
 def extract_message_text(api_response: Dict[str, Any]) -> str:
@@ -266,6 +261,9 @@ def main(args: argparse.Namespace) -> None:
     accepted_path.parent.mkdir(parents=True, exist_ok=True)
     rejected_path.parent.mkdir(parents=True, exist_ok=True)
     sft_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if args.provider == "vllm":
+        raise NotImplementedError("vLLM provider support is not implemented yet")
 
     api_key = args.api_key or os.environ.get(args.api_key_env, "")
     processed = accepted = rejected = 0
@@ -301,7 +299,7 @@ def main(args: argparse.Namespace) -> None:
                         timeout=args.timeout,
                     )
                     response_text = extract_message_text(api_response)
-                except (error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+                except (openai.OpenAIError, TimeoutError, json.JSONDecodeError) as exc:
                     api_response = {}
                     api_error = str(exc)
 
