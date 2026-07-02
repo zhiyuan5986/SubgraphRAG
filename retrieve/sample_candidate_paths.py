@@ -125,10 +125,12 @@ def main(args: argparse.Namespace) -> None:
     config = cpt["config"]
     if args.dataset is not None:
         config["dataset"]["name"] = args.dataset
+    if args.data_dir is not None:
+        config['dataset']['data_dir'] = args.data_dir
     set_seed(config["env"]["seed"])
     torch.set_num_threads(config["env"].get("num_threads", 1))
 
-    dataset = RetrieverDataset(config=config, split=args.split, skip_no_path=False)
+    dataset = RetrieverDataset(config=config, split=args.split, skip_no_path=True)
     emb_size = dataset[0]["q_emb"].shape[-1]
     model = Retriever(emb_size, **config["retriever"]).to(device)
     model.load_state_dict(cpt["model_state_dict"])
@@ -198,6 +200,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint", "-p", required=True, help="Path to SubgraphRAG retriever checkpoint cpt.pth")
     parser.add_argument("--dataset", "-d", required=True, choices=["webqsp", "cwq"])
+    parser.add_argument("--data_dir", type=str, default=None)
     parser.add_argument("--split", default="test", help="Dataset split to sample")
     parser.add_argument("--output", "-o", required=True, help="Output JSONL path")
     parser.add_argument("--device", default="cuda:0")

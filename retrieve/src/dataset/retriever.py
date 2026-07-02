@@ -16,7 +16,7 @@ class RetrieverDataset:
     ):
         # Load pre-processed data.
         dataset_name = config['dataset']['name']
-        processed_dict_list = self._load_processed(dataset_name, split)
+        processed_dict_list = self._load_processed(config, dataset_name, split)
 
         # Extract directed shortest paths from topic entities to answer
         # entities or vice versa as weak supervision signals for triple scoring.
@@ -25,7 +25,7 @@ class RetrieverDataset:
 
         # Load pre-computed embeddings.
         emb_dict = self._load_emb(
-            dataset_name, config['dataset']['text_encoder_name'], split)
+            config, dataset_name, config['dataset']['text_encoder_name'], split)
 
         # Put everything together.
         self._assembly(
@@ -33,10 +33,12 @@ class RetrieverDataset:
 
     def _load_processed(
         self,
+        config,
         dataset_name,
         split
     ):
         processed_file = os.path.join(
+            config['dataset'].get('data_dir', ''),
             f'data_files/{dataset_name}/processed/{split}.pkl')
         with open(processed_file, 'rb') as f:
             return pickle.load(f)
@@ -178,11 +180,14 @@ class RetrieverDataset:
 
     def _load_emb(
         self,
+        config,
         dataset_name,
         text_encoder_name,
         split
     ):
-        file_path = f'data_files/{dataset_name}/emb/{text_encoder_name}/{split}.pth'
+        file_path = os.path.join(
+            config['dataset'].get('data_dir', ''),
+            f'data_files/{dataset_name}/emb/{text_encoder_name}/{split}.pth')
         dict_file = torch.load(file_path)
         
         return dict_file
